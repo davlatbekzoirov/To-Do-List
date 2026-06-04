@@ -1,0 +1,23 @@
+{% extends 'todos/base.html' %}
+{% block title %}Delete Task{% endblock %}
+{% block content %}
+<div class="row justify-content-center mt-5">
+    <div class="col-md-5">
+        <div class="card border-0 shadow-lg rounded-4 overflow-hidden text-center">
+            <div class="p-5">
+                <div class="bg-danger bg-opacity-10 d-inline-flex p-4 rounded-circle mb-4 text-danger animate-pulse">
+                    <i class="fas fa-trash-can fa-3x"></i>
+                </div>
+                <h4 class="fw-bold text-dark mb-2">Delete Task?</h4>
+                <p class="text-secondary px-2">Are you sure you want to permanently erase "<span class="text-dark fw-semibold">{{ task.title }}</span>"? This structural action cannot be reverted.</p>
+                
+                <form method="post" class="d-flex gap-3 justify-content-center mt-4 mx-2">
+                    {% csrf_token %}
+                    <a href="{% url 'task_list' %}" class="btn btn-light border flex-fill py-2.5">Keep Task</a>
+                    <button type="submit" class="btn btn-danger flex-fill shadow-sm py-2.5">Yes, Remove</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,45 @@
+{% extends 'todos/base.html' %}
+{% block title %}{{ action }} Task - TaskFlow{% endblock %}
+{% block content %}
+<div class="row justify-content-center mt-3">
+    <div class="col-md-7 col-lg-6">
+        <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="card-header bg-white border-0 pt-4 px-4 pb-1">
+                <h4 class="mb-0 fw-bold text-dark d-flex align-items-center gap-2">
+                    <div class="p-2 bg-primary bg-opacity-10 text-primary rounded-3 d-inline-flex"><i class="fas fa-pen-nib fs-5"></i></div>
+                    {{ action }} Task
+                </h4>
+            </div>
+            <div class="card-body p-4">
+                <form method="post" autocomplete="off">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-secondary text-uppercase tracking-wider">Title *</label>
+                        {{ form.title }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-secondary text-uppercase tracking-wider">Description</label>
+                        {{ form.description }}
+                    </div>
+                    <div class="row g-3 mb-4">
+                        <div class="col-6">
+                            <label class="form-label small fw-bold text-secondary text-uppercase tracking-wider">Priority</label>
+                            {{ form.priority }}
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-bold text-secondary text-uppercase tracking-wider">Due Date</label>
+                            {{ form.due_date }}
+                        </div>
+                    </div>
+                    <div class="d-flex gap-3 pt-2">
+                        <a href="{% url 'task_list' %}" class="btn btn-light border flex-fill fw-medium py-2.5">Cancel</a>
+                        <button type="submit" class="btn btn-primary flex-fill shadow-sm py-2.5">
+                            <i class="fas fa-check me-1"></i> Save Task
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

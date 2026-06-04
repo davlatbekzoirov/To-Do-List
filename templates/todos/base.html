@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}TaskFlow{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #f8fafc;
+            --navbar-gradient: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            --card-hover-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        
+        body { 
+            background-color: var(--bg-primary); 
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            color: #1e293b;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .navbar { 
+            background: var(--navbar-gradient) !important; 
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.15);
+            padding: 0.85rem 0;
+        }
+        
+        .navbar-brand {
+            font-size: 1.35rem;
+            letter-spacing: -0.025em;
+        }
+
+        .main-container {
+            flex: 1;
+        }
+
+        /* Reusable UI Accents */
+        .stat-card { 
+            border: none; 
+            border-radius: 16px; 
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: var(--card-shadow);
+        }
+        .stat-card:hover { 
+            transform: translateY(-4px); 
+            box-shadow: var(--card-hover-shadow);
+        }
+
+        .task-card { 
+            border: none; 
+            border-radius: 14px; 
+            margin-bottom: 12px; 
+            transition: all 0.2s ease; 
+            border-left: 5px solid #e2e8f0;
+            box-shadow: var(--card-shadow);
+        }
+        .task-card:hover { 
+            transform: translateX(4px);
+            box-shadow: var(--card-hover-shadow); 
+        }
+        
+        .task-card.completed { 
+            opacity: 0.75; 
+            border-left-color: #10b981 !important; 
+            background-color: #f1f5f9;
+        }
+
+        /* Priority Colors */
+        .priority-low { border-left-color: #94a3b8 !important; }
+        .priority-medium { border-left-color: #3b82f6 !important; }
+        .priority-high { border-left-color: #f97316 !important; }
+        .priority-urgent { border-left-color: #ef4444 !important; }
+
+        .badge-low { background-color: #94a3b8; color: #fff; }
+        .badge-medium { background-color: #3b82f6; color: #fff; }
+        .badge-high { background-color: #f97316; color: #fff; }
+        .badge-urgent { background-color: #ef4444; color: #fff; }
+
+        .overdue { color: #ef4444; font-weight: 600; background: #fee2e2; padding: 2px 8px; border-radius: 6px; display: inline-block; }
+        .completed-text { text-decoration: line-through; color: #64748b; }
+        
+        /* Modernized Form Inputs */
+        .form-control, .form-select {
+            border-radius: 10px;
+            border: 1px solid #cbd5e1;
+            padding: 0.6rem 0.85rem;
+            transition: all 0.2s;
+        }
+        .form-control:focus, .form-select:focus {
+            border-color: #6366f1;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+        }
+        
+        .btn-primary {
+            background: #4f46e5;
+            border: none;
+            border-radius: 10px;
+            padding: 0.6rem 1.2rem;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        .btn-primary:hover {
+            background: #4338ca;
+            transform: translateY(-1px);
+        }
+        .btn-outline-secondary {
+            border-radius: 10px;
+            padding: 0.6rem 1.2rem;
+        }
+    </style>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark mb-4">
+    <div class="container">
+        <a class="navbar-brand fw-bold d-flex align-items-center" href="{% url 'task_list' %}">
+            <i class="fas fa-check-circle me-2-json text-white fs-3 me-2"></i>TaskFlow
+        </a>
+        {% if user.is_authenticated %}
+        <div class="ms-auto d-flex align-items-center gap-3">
+            <span class="text-white bg-white bg-opacity-10 px-3 py-1.5 rounded-pill small">
+                <i class="fas fa-user me-2"></i>{{ user.username }}
+            </span>
+            <a href="{% url 'logout' %}" class="btn btn-outline-light btn-sm px-3 rounded-pill">Logout</a>
+        </div>
+        {% endif %}
+    </div>
+</nav>
+
+<div class="container main-container mb-5">
+    {% for message in messages %}
+    <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show border-0 shadow-sm rounded-4" role="alert">
+        <div class="d-flex align-items-center">
+            <i class="fas {% if message.tags == 'success' %}fa-circle-check text-success{% else %}fa-circle-exclamation text-danger{% endif %} me-2 fs-5"></i>
+            <div>{{ message }}</div>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endfor %}
+    {% block content %}{% endblock %}
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

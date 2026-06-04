@@ -1,0 +1,92 @@
+# ==========================================
+# Django & Python Core Exclusions
+# ==========================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# ==========================================
+# Virtual Environments
+# ==========================================
+venv/
+.venv/
+env/
+.env/
+ENV/
+env.bak/
+venv.bak/
+
+# ==========================================
+# Database & Runtime Storage
+# ==========================================
+# Excludes your local SQLite database
+*.sqlite3
+*.sqlite3-journal
+
+# Media and uploads directory (if added later)
+media/
+/static/
+
+# ==========================================
+# Environment Variables & Secrets
+# ==========================================
+# Absolutely vital to keep your SECRET_KEY secure
+.env
+.ini
+.cfg
+*.env
+*.secret
+
+# ==========================================
+# IDE & System Files
+# ==========================================
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+Ehthumbs.db
+Desktop.ini
+
+# JetBrains (PyCharm, WebStorm, etc.)
+.idea/
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# ==========================================
+# Testing & Logs
+# ==========================================
+htmlcov/
+.tox/
+.nosexy/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.log
+.pytest_cache/
