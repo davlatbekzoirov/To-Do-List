@@ -14,6 +14,21 @@ TaskFlow is a modern, responsive, and minimalist Django-based To-Do application.
 
 ---
 
+## 📸 Screenshots
+
+### Main Dashboard
+<p align="center">
+  <img src="dashboard.png" alt="TaskFlow Dashboard" width="100%">
+</p>
+
+### User Authentication & Task Management
+<p align="center">
+  <img src="login.png" alt="Login Interface" width="49%">
+  <img src="add_task.png" alt="Add Task Form" width="49%">
+</p>
+
+---
+
 ## 🛠️ Technology Stack
 
 * **Backend Framework:** Django (Python)
