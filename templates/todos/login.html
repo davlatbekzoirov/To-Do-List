@@ -1,41 +1,39 @@
 {% extends 'todos/base.html' %}
-{% block title %}Login - TaskFlow{% endblock %}
+{% block title %}Sign In — TaskFlow{% endblock %}
 {% block content %}
-<div class="row justify-content-center mt-4">
-    <div class="col-md-5 col-lg-4">
-        <div class="card border-0 shadow-lg rounded-4">
-            <div class="card-body p-4.5">
+<div class="row justify-content-center mt-5">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body p-4">
                 <div class="text-center mb-4">
-                    <div class="bg-primary bg-opacity-10 text-primary d-inline-flex p-3 rounded-circle mb-2">
-                        <i class="fas fa-fingerprint fa-2x"></i>
+                    <div style="width:48px;height:48px;background:var(--accent-light);border-radius:12px;display:inline-flex;align-items:center;justify-content:center;margin-bottom:12px">
+                        <span class="brand-dot" style="width:10px;height:10px"></span>
                     </div>
-                    <h4 class="fw-bold text-dark mb-1">Welcome Back</h4>
-                    <p class="text-muted small">Sign in to sync your productivity matrix</p>
+                    <h5 style="font-weight:600;letter-spacing:-.01em">Welcome back</h5>
+                    <p style="color:var(--text-3);font-size:.85rem;margin-bottom:0">Sign in to your TaskFlow account</p>
                 </div>
                 <form method="post">
                     {% csrf_token %}
                     {% for field in form %}
                     <div class="mb-3">
-                        <label class="form-label small fw-bold text-secondary mb-1">{{ field.label }}</label>
-                        <input type="{{ field.field.widget.input_type }}" name="{{ field.html_name }}"
-                               class="form-control" {% if field.value %}value="{{ field.value }}"{% endif %}>
+                        <label class="form-label">{{ field.label }}</label>
+                        <input type="{{ field.field.widget.input_type }}"
+                               name="{{ field.html_name }}"
+                               class="form-control"
+                               {% if field.value %}value="{{ field.value }}"{% endif %}>
                         {% if field.errors %}
-                            {% for error in field.errors %}
-                                <div class="text-danger small mt-1"><i class="fas fa-circle-exclamation me-1"></i>{{ error }}</div>
-                            {% endfor %}
+                        <div style="font-size:.8rem;color:var(--urgent);margin-top:4px">{{ field.errors }}</div>
                         {% endif %}
                     </div>
                     {% endfor %}
-                    <button type="submit" class="btn btn-primary w-100 mt-3 py-2.5 shadow-sm fw-semibold">Sign In</button>
+                    <button type="submit" class="btn btn-primary w-100 mt-1">Sign In</button>
                 </form>
-                <div class="text-center mt-4 pt-2 border-top">
-                    <p class="text-muted small mb-0">
-                        New around here? <a href="{% url 'register' %}" class="text-primary text-decoration-none fw-medium">Create Account</a>
-                    </p>
-                </div>
+                <div style="border-top:1px solid var(--border);margin:1.25rem 0"></div>
+                <p class="text-center mb-0" style="font-size:.83rem;color:var(--text-3)">
+                    No account? <a href="{% url 'register' %}" style="color:var(--accent)">Create one</a>
+                </p>
             </div>
         </div>
     </div>
 </div>
-<style>.p-4\.5 { padding: 2.25rem !important; }</style>
 {% endblock %}

@@ -1,20 +1,21 @@
 {% extends 'todos/base.html' %}
-{% block title %}Delete Task{% endblock %}
+{% block title %}Delete Task — TaskFlow{% endblock %}
 {% block content %}
-<div class="row justify-content-center mt-5">
+<div class="row justify-content-center">
     <div class="col-md-5">
-        <div class="card border-0 shadow-lg rounded-4 overflow-hidden text-center">
-            <div class="p-5">
-                <div class="bg-danger bg-opacity-10 d-inline-flex p-4 rounded-circle mb-4 text-danger animate-pulse">
-                    <i class="fas fa-trash-can fa-3x"></i>
-                </div>
-                <h4 class="fw-bold text-dark mb-2">Delete Task?</h4>
-                <p class="text-secondary px-2">Are you sure you want to permanently erase "<span class="text-dark fw-semibold">{{ task.title }}</span>"? This structural action cannot be reverted.</p>
-                
-                <form method="post" class="d-flex gap-3 justify-content-center mt-4 mx-2">
+        <div class="card">
+            <div class="card-body text-center p-5">
+                <div style="font-size:2.5rem;margin-bottom:1rem">🗑</div>
+                <h5 style="font-weight:600;margin-bottom:.5rem">Delete task?</h5>
+                <p style="color:var(--text-2);font-size:.9rem;margin-bottom:1.5rem">
+                    "<strong>{{ task.title }}</strong>" will be permanently removed along with all its subtasks. This cannot be undone.
+                </p>
+                <form method="post" class="d-flex gap-2 justify-content-center">
                     {% csrf_token %}
-                    <a href="{% url 'task_list' %}" class="btn btn-light border flex-fill py-2.5">Keep Task</a>
-                    <button type="submit" class="btn btn-danger flex-fill shadow-sm py-2.5">Yes, Remove</button>
+                    <button type="submit" class="btn btn-primary" style="background:var(--urgent)!important;border-color:var(--urgent)!important">
+                        Delete
+                    </button>
+                    <a href="{% url 'task_list' %}" class="btn btn-outline-secondary">Cancel</a>
                 </form>
             </div>
         </div>

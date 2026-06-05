@@ -1,45 +1,174 @@
 {% extends 'todos/base.html' %}
-{% block title %}{{ action }} Task - TaskFlow{% endblock %}
+{% block title %}{{ action }} Task — TaskFlow{% endblock %}
 {% block content %}
-<div class="row justify-content-center mt-3">
-    <div class="col-md-7 col-lg-6">
-        <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
-            <div class="card-header bg-white border-0 pt-4 px-4 pb-1">
-                <h4 class="mb-0 fw-bold text-dark d-flex align-items-center gap-2">
-                    <div class="p-2 bg-primary bg-opacity-10 text-primary rounded-3 d-inline-flex"><i class="fas fa-pen-nib fs-5"></i></div>
-                    {{ action }} Task
-                </h4>
-            </div>
+<div class="row justify-content-center">
+    <div class="col-md-7">
+        <div class="card border-0 shadow-sm">
             <div class="card-body p-4">
-                <form method="post" autocomplete="off">
+                <h5 class="mb-4" style="font-weight:600;letter-spacing:-.01em">
+                    {% if action == 'Create' %}New Task{% else %}Edit Task{% endif %}
+                </h5>
+
+                <form method="post" id="taskForm">
                     {% csrf_token %}
+                    {{ form.subtask_titles }}
+
+                    <!-- Title -->
                     <div class="mb-3">
-                        <label class="form-label small fw-bold text-secondary text-uppercase tracking-wider">Title *</label>
+                        <label class="form-label">Title</label>
                         {{ form.title }}
+                        {% if form.title.errors %}<div class="text-danger small mt-1">{{ form.title.errors }}</div>{% endif %}
                     </div>
+
+                    <!-- Description -->
                     <div class="mb-3">
-                        <label class="form-label small fw-bold text-secondary text-uppercase tracking-wider">Description</label>
+                        <label class="form-label">Description</label>
                         {{ form.description }}
                     </div>
-                    <div class="row g-3 mb-4">
-                        <div class="col-6">
-                            <label class="form-label small fw-bold text-secondary text-uppercase tracking-wider">Priority</label>
+
+                    <!-- Priority / Category / Due Date row -->
+                    <div class="row g-3 mb-3">
+                        <div class="col-sm-4">
+                            <label class="form-label">Priority</label>
                             {{ form.priority }}
                         </div>
-                        <div class="col-6">
-                            <label class="form-label small fw-bold text-secondary text-uppercase tracking-wider">Due Date</label>
+                        <div class="col-sm-4">
+                            <label class="form-label">Category</label>
+                            {{ form.category }}
+                        </div>
+                        <div class="col-sm-4">
+                            <label class="form-label">Due Date &amp; Time</label>
                             {{ form.due_date }}
                         </div>
                     </div>
-                    <div class="d-flex gap-3 pt-2">
-                        <a href="{% url 'task_list' %}" class="btn btn-light border flex-fill fw-medium py-2.5">Cancel</a>
-                        <button type="submit" class="btn btn-primary flex-fill shadow-sm py-2.5">
-                            <i class="fas fa-check me-1"></i> Save Task
+
+                    <!-- Subtasks Builder -->
+                    <div class="mb-4">
+                        <label class="form-label d-flex align-items-center justify-content-between">
+                            <span>Subtasks / Checklist</span>
+                            <span style="font-size:.72rem;color:var(--text-3);text-transform:none;letter-spacing:0;font-weight:400">
+                                Click + to add steps
+                            </span>
+                        </label>
+
+                        <div id="subtask-list" style="margin-bottom:8px"></div>
+
+                        <div class="d-flex gap-2">
+                            <input type="text" id="subtask-input" class="form-control"
+                                   placeholder="Add a step…" style="font-size:.875rem"
+                                   onkeydown="if(event.key==='Enter'){event.preventDefault();addSubtask()}">
+                            <button type="button" onclick="addSubtask()"
+                                    style="flex-shrink:0;width:36px;height:38px;border-radius:var(--radius-sm);border:1px solid var(--border);background:none;cursor:pointer;font-size:1.1rem;color:var(--accent);transition:all .15s"
+                                    onmouseover="this.style.background='var(--accent-light)'"
+                                    onmouseout="this.style.background='none'">+</button>
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary flex-fill">
+                            <i class="fas fa-save me-1" style="font-size:.8rem"></i>
+                            {% if action == 'Create' %}Create Task{% else %}Save Changes{% endif %}
                         </button>
+                        <a href="{% url 'task_list' %}" class="btn btn-outline-secondary">Cancel</a>
                     </div>
                 </form>
             </div>
         </div>
+
+        {% if action == 'Create' %}
+        <p class="text-center mt-3" style="font-size:.8rem;color:var(--text-3)">
+            Need a new category? <a href="{% url 'category_list' %}" style="color:var(--accent)">Manage categories →</a>
+        </p>
+        {% endif %}
     </div>
 </div>
+
+<style>
+.subtask-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 10px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    margin-bottom: 6px;
+    background: var(--surface);
+    font-size: .875rem;
+    color: var(--text);
+    cursor: default;
+    transition: background .15s;
+}
+.subtask-row:hover { background: var(--surface-2); }
+.subtask-row-handle { color: var(--text-3); font-size: .75rem; cursor: grab; }
+.subtask-row-title { flex-grow: 1; }
+.subtask-row-del {
+    color: var(--text-3);
+    cursor: pointer;
+    background: none;
+    border: none;
+    font-size: .8rem;
+    padding: 0;
+    line-height: 1;
+    transition: color .15s;
+}
+.subtask-row-del:hover { color: var(--urgent); }
+</style>
+
+<script>
+// ── Subtask builder ───────────────────────────────────────────────────────────
+const subtasks = [];
+
+// Pre-populate from existing data (edit mode)
+{% if action == 'Edit' and task %}
+const existing = document.getElementById('id_subtask_titles').value;
+if (existing.trim()) {
+    existing.split('\n').forEach(t => { if(t.trim()) subtasks.push(t.trim()); });
+}
+{% endif %}
+
+function renderSubtasks() {
+    const list = document.getElementById('subtask-list');
+    list.innerHTML = '';
+    subtasks.forEach((title, i) => {
+        const row = document.createElement('div');
+        row.className = 'subtask-row';
+        row.innerHTML = `
+            <span class="subtask-row-handle">⠿</span>
+            <span class="subtask-row-title">${escHtml(title)}</span>
+            <button class="subtask-row-del" onclick="removeSubtask(${i})" title="Remove">
+                <i class="fas fa-times"></i>
+            </button>`;
+        list.appendChild(row);
+    });
+    syncHidden();
+}
+
+function addSubtask() {
+    const input = document.getElementById('subtask-input');
+    const val = input.value.trim();
+    if (!val) return;
+    subtasks.push(val);
+    input.value = '';
+    renderSubtasks();
+    input.focus();
+}
+
+function removeSubtask(i) {
+    subtasks.splice(i, 1);
+    renderSubtasks();
+}
+
+function syncHidden() {
+    document.getElementById('id_subtask_titles').value = subtasks.join('\n');
+}
+
+function escHtml(s) {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+document.getElementById('taskForm').addEventListener('submit', syncHidden);
+
+// Init
+renderSubtasks();
+</script>
 {% endblock %}
