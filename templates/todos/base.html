@@ -11,21 +11,21 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
         :root {
-            --bg: #f6f5f2;
+            --bg: #f0f2f5;
             --surface: #ffffff;
-            --surface-2: #f0ede8;
-            --border: #e5e1da;
-            --text: #1a1916;
-            --text-2: #6b6760;
-            --text-3: #a8a49e;
-            --accent: #d4622a;
-            --accent-light: #fdf0ea;
-            --accent-dark: #b84e1f;
-            --low: #6b7280;
-            --medium: #2563eb;
-            --high: #d97706;
-            --urgent: #dc2626;
-            --success: #059669;
+            --surface-2: #f8f9fa;
+            --border: #dee2e6;
+            --text: #212529;
+            --text-2: #6c757d;
+            --text-3: #adb5bd;
+            --accent: #0d6efd;
+            --accent-light: #e7f1ff;
+            --accent-dark: #0b5ed7;
+            --low: #6c757d;
+            --medium: #0d6efd;
+            --high: #fd7e14;
+            --urgent: #dc3545;
+            --success: #28a745;
             --radius: 10px;
             --radius-sm: 6px;
             --shadow: 0 1px 3px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.04);
@@ -45,8 +45,8 @@
 
         /* ── Navbar ── */
         .navbar {
-            background: var(--surface) !important;
-            border-bottom: 1px solid var(--border);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+            border-bottom: none;
             padding: 0 0;
             height: 56px;
         }
@@ -54,7 +54,7 @@
         .navbar-brand {
             font-weight: 600;
             font-size: 1.05rem;
-            color: var(--text) !important;
+            color: white !important;
             letter-spacing: -.01em;
             display: flex;
             align-items: center;
@@ -62,39 +62,39 @@
         }
         .brand-dot {
             width: 8px; height: 8px;
-            background: var(--accent);
+            background: rgba(255,255,255,.7);
             border-radius: 50%;
             display: inline-block;
         }
         .nav-link-item {
             font-size: .85rem;
-            color: var(--text-2);
+            color: rgba(255,255,255,.8);
             text-decoration: none;
             padding: 4px 10px;
             border-radius: var(--radius-sm);
             transition: all .15s;
             font-weight: 500;
         }
-        .nav-link-item:hover { color: var(--text); background: var(--surface-2); }
-        .nav-link-item.active { color: var(--accent); background: var(--accent-light); }
+        .nav-link-item:hover { color: white; background: rgba(255,255,255,.15); }
+        .nav-link-item.active { color: white; background: rgba(255,255,255,.2); }
         .nav-user {
             font-size: .82rem;
-            color: var(--text-3);
+            color: rgba(255,255,255,.75);
             font-weight: 500;
             letter-spacing: .01em;
         }
         .btn-logout {
             font-size: .82rem;
-            color: var(--text-2);
+            color: white;
             background: none;
-            border: 1px solid var(--border);
+            border: 1px solid rgba(255,255,255,.4);
             border-radius: var(--radius-sm);
             padding: 4px 12px;
             cursor: pointer;
             transition: all .15s;
             font-family: inherit;
         }
-        .btn-logout:hover { border-color: var(--text-2); color: var(--text); }
+        .btn-logout:hover { border-color: white; background: rgba(255,255,255,.1); }
 
         /* ── Cards ── */
         .card {
