@@ -1,9 +1,11 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}TaskFlow{% endblock %}</title>
+    <link rel="icon" href="{% static 'todos/favicon.svg' %}" type="image/svg+xml">    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -296,18 +298,22 @@
 <nav class="navbar navbar-expand-lg">
     <div class="container d-flex align-items-center gap-3">
         <a class="navbar-brand" href="{% url 'task_list' %}">
-            <span class="brand-dot"></span>TaskFlow
+            <img src="{% static 'todos/logo.svg' %}" alt="TaskFlow logo"
+                width="30" height="30" style="margin-right:8px;vertical-align:middle">
+            TaskFlow
         </a>
         {% if user.is_authenticated %}
         <a href="{% url 'task_list' %}" class="nav-link-item {% if request.resolver_match.url_name == 'task_list' %}active{% endif %}">Tasks</a>
         <a href="{% url 'category_list' %}" class="nav-link-item {% if 'category' in request.resolver_match.url_name %}active{% endif %}">Categories</a>
         {% endif %}
+        {% if user.is_authenticated %}
         <div class="ms-auto d-flex align-items-center gap-3">
-            {% if user.is_authenticated %}
-            <span class="nav-user">{{ user.username }}</span>
-            <a href="{% url 'logout' %}" class="btn-logout">Sign out</a>
-            {% endif %}
+            <span class="text-white bg-white bg-opacity-10 px-3 py-1.5 rounded-pill small">
+                <i class="fas fa-user me-2"></i>{{ user.username }}
+            </span>
+            <a href="{% url 'logout' %}" class="btn btn-outline-light btn-sm px-3 rounded-pill">Logout</a>
         </div>
+        {% endif %}
     </div>
 </nav>
 
