@@ -34,11 +34,12 @@
 <div class="card mb-4">
     <div class="card-body p-3">
         <form method="get" class="row g-2 align-items-end">
-            <div class="col-12 col-md-4">{{ filter_form.search }}</div>
+            <div class="col-12 col-md-3">{{ filter_form.search }}</div>
             <div class="col-6 col-md-2">{{ filter_form.status }}</div>
             <div class="col-6 col-md-2">{{ filter_form.priority }}</div>
             <div class="col-6 col-md-2">{{ filter_form.category }}</div>
-            <div class="col-6 col-md-2 d-flex gap-2">
+            <div class="col-6 col-md-2">{{ filter_form.sort }}</div>
+            <div class="col-12 col-md-1 d-flex gap-2">
                 <button type="submit" class="btn btn-primary flex-fill" style="padding:8px 0">
                     <i class="fas fa-filter" style="font-size:.8rem"></i>
                 </button>
@@ -52,33 +53,41 @@
 
 <!-- Header -->
 <div class="d-flex justify-content-between align-items-center mb-3">
-    <span class="section-label">{{ tasks.count }} task{{ tasks.count|pluralize }}</span>
+    <span class="section-label" id="task-count-label">{{ tasks|length }} task{{ tasks|length|pluralize }}</span>
     <a href="{% url 'task_create' %}" class="btn btn-primary" style="padding:7px 16px; font-size:.85rem">
         <i class="fas fa-plus me-1" style="font-size:.75rem"></i> New Task
     </a>
 </div>
 
 <!-- Task List -->
+<div id="task-list-container">
 {% if tasks %}
     {% for task in tasks %}
-    <div class="card task-card priority-{{ task.priority }} {% if task.completed %}completed{% endif %}">
+    <div class="card task-card priority-{{ task.priority }} {% if task.completed %}completed{% endif %}"
+         id="task-card-{{ task.pk }}" data-task-id="{{ task.pk }}">
         <div class="card-body py-3 px-3">
             <div class="d-flex align-items-start gap-3">
 
                 <!-- Toggle -->
-                <a href="{% url 'task_toggle' task.pk %}"
-                   class="toggle-btn {% if task.completed %}done{% endif %} mt-1"
-                   title="{% if task.completed %}Mark active{% else %}Mark done{% endif %}">
-                    {% if task.completed %}<i class="fas fa-check" style="font-size:.6rem"></i>{% endif %}
-                </a>
+                <button class="toggle-btn {% if task.completed %}done{% endif %} mt-1"
+                        onclick="ajaxToggle({{ task.pk }})"
+                        title="{% if task.completed %}Mark active{% else %}Mark done{% endif %}">
+                    <i class="fas fa-check" style="font-size:.6rem;display:{% if task.completed %}block{% else %}none{% endif %}"></i>
+                </button>
 
                 <!-- Main content -->
                 <div class="flex-grow-1 min-width-0">
                     <div class="d-flex align-items-center gap-2 flex-wrap">
-                        <span class="fw-500 {% if task.completed %}completed-text{% endif %}" style="font-size:.95rem;font-weight:500">{{ task.title }}</span>
+                        <span class="task-title {% if task.completed %}completed-text{% endif %}"
+                              style="font-size:.95rem;font-weight:500">{{ task.title }}</span>
                         <span class="badge-priority badge-{{ task.priority }}">{{ task.get_priority_display }}</span>
                         {% if task.category %}
                         <span class="cat-pill" style="background:{{ task.category.color }}22;color:{{ task.category.color }}">{{ task.category.name }}</span>
+                        {% endif %}
+                        {% if task.recurrence %}
+                        <span class="recurrence-pill recurrence-{{ task.recurrence }}">
+                            <i class="fas fa-redo" style="font-size:.6rem;margin-right:3px"></i>{{ task.get_recurrence_display }}
+                        </span>
                         {% endif %}
                     </div>
 
@@ -87,7 +96,8 @@
                     {% endif %}
 
                     {% if task.due_date %}
-                    <div class="mt-1 due-time {% if task.is_overdue %}overdue-text{% else %}{% endif %}" style="{% if not task.is_overdue %}color:var(--text-3){% endif %}">
+                    <div class="mt-1 due-time {% if task.is_overdue %}overdue-text{% else %}{% endif %}"
+                         style="{% if not task.is_overdue %}color:var(--text-3){% endif %}">
                         <i class="fas fa-clock me-1" style="font-size:.7rem"></i>
                         {% if task.is_overdue %}<i class="fas fa-exclamation-circle me-1" style="font-size:.7rem"></i>Overdue · {% endif %}
                         {{ task.due_date|date:"M j, Y" }} at {{ task.due_date|time:"g:i A" }}
@@ -107,8 +117,6 @@
                                 {{ task.completed_subtasks_count }}/{{ task.total_subtasks_count }}
                             </span>
                         </div>
-
-                        <!-- Subtask items -->
                         <div class="subtask-list" id="subtasks-{{ task.pk }}">
                             {% for subtask in task.subtasks.all %}
                             <div class="subtask-item {% if subtask.completed %}done{% endif %}"
@@ -131,9 +139,9 @@
                     <a href="{% url 'task_edit' task.pk %}" class="btn-icon" title="Edit">
                         <i class="fas fa-pen"></i>
                     </a>
-                    <a href="{% url 'task_delete' task.pk %}" class="btn-icon danger" title="Delete">
+                    <button class="btn-icon danger" onclick="ajaxDelete({{ task.pk }})" title="Delete">
                         <i class="fas fa-trash"></i>
-                    </a>
+                    </button>
                 </div>
 
             </div>
@@ -141,7 +149,7 @@
     </div>
     {% endfor %}
 {% else %}
-    <div class="text-center py-5">
+    <div class="text-center py-5" id="empty-state">
         <div style="font-size:3rem;color:var(--text-3);margin-bottom:1rem">✓</div>
         <div style="font-weight:600;color:var(--text-2);margin-bottom:.5rem">No tasks found</div>
         <div style="font-size:.875rem;color:var(--text-3);margin-bottom:1.5rem">Add your first task to get started</div>
@@ -150,41 +158,183 @@
         </a>
     </div>
 {% endif %}
+</div>
 
-<script>
-function getCsrfToken() {
-    return document.cookie.split(';')
-        .map(c => c.trim())
-        .find(c => c.startsWith('csrftoken='))
-        ?.split('=')[1] || '';
+<!-- Recurrence toast -->
+<div id="recurrence-toast" style="
+    display:none;position:fixed;bottom:24px;right:24px;
+    background:#1a1916;color:white;padding:12px 18px;
+    border-radius:10px;font-size:.85rem;z-index:9999;
+    box-shadow:0 4px 20px rgba(0,0,0,.25);max-width:300px;
+    animation: slideUp .25s ease;">
+    <i class="fas fa-redo me-2" style="color:#10b981"></i>
+    <span id="recurrence-toast-msg"></span>
+</div>
+
+<style>
+@keyframes slideUp {
+    from { opacity:0; transform:translateY(12px); }
+    to   { opacity:1; transform:translateY(0); }
 }
 
+/* Recurrence pill */
+.recurrence-pill {
+    font-size:.68rem;font-weight:600;padding:2px 8px;
+    border-radius:100px;letter-spacing:.03em;
+    display:inline-flex;align-items:center;
+}
+.recurrence-daily   { background:#f0fdf4; color:#059669; }
+.recurrence-weekly  { background:#eff6ff; color:#2563eb; }
+.recurrence-monthly { background:#faf5ff; color:#7c3aed; }
+
+/* Fade-out animation for deleted cards */
+.task-card.removing {
+    animation: fadeOut .3s ease forwards;
+}
+@keyframes fadeOut {
+    to { opacity:0; transform:translateX(20px); height:0; margin:0; padding:0; overflow:hidden; }
+}
+
+/* Pulse animation for toggle */
+.task-card.toggling .toggle-btn {
+    animation: pulse .3s ease;
+}
+@keyframes pulse {
+    0%   { transform:scale(1); }
+    50%  { transform:scale(1.3); }
+    100% { transform:scale(1); }
+}
+</style>
+
+<script>
+const CSRF = () => document.cookie.split(';').map(c=>c.trim()).find(c=>c.startsWith('csrftoken='))?.split('=')[1] || '';
+
+// ── Task Toggle ───────────────────────────────────────────────────────────────
+async function ajaxToggle(taskId) {
+    const card = document.getElementById(`task-card-${taskId}`);
+    if (!card) return;
+
+    card.classList.add('toggling');
+
+    try {
+        const resp = await fetch(`/task/${taskId}/toggle/`, {
+            method: 'POST',
+            headers: { 'X-CSRFToken': CSRF() }
+        });
+        const data = await resp.json();
+        if (!data.ok) return;
+
+        const btn = card.querySelector('.toggle-btn');
+        const icon = btn.querySelector('i');
+        const titleEl = card.querySelector('.task-title');
+
+        if (data.completed) {
+            card.classList.add('completed');
+            btn.classList.add('done');
+            icon.style.display = 'block';
+            titleEl?.classList.add('completed-text');
+        } else {
+            card.classList.remove('completed');
+            btn.classList.remove('done');
+            icon.style.display = 'none';
+            titleEl?.classList.remove('completed-text');
+        }
+
+        // Show recurrence toast if a new task was spawned
+        if (data.spawned) {
+            showToast(`Next "${data.spawned.title}" scheduled (${data.spawned.recurrence})`);
+        }
+    } catch(e) {
+        console.error('Toggle failed', e);
+    } finally {
+        card.classList.remove('toggling');
+    }
+}
+
+// ── Task Delete ───────────────────────────────────────────────────────────────
+async function ajaxDelete(taskId) {
+    if (!confirm('Delete this task?')) return;
+
+    const card = document.getElementById(`task-card-${taskId}`);
+    if (!card) return;
+
+    try {
+        const resp = await fetch(`/task/${taskId}/delete/`, {
+            method: 'POST',
+            headers: { 'X-CSRFToken': CSRF() }
+        });
+        const data = await resp.json();
+        if (!data.ok) return;
+
+        card.classList.add('removing');
+        card.addEventListener('animationend', () => {
+            card.remove();
+            updateCountLabel();
+            checkEmpty();
+        });
+    } catch(e) {
+        console.error('Delete failed', e);
+    }
+}
+
+// ── Subtask Toggle ────────────────────────────────────────────────────────────
 async function toggleSubtask(subtaskId, taskId) {
     const item = document.querySelector(`[data-subtask-id="${subtaskId}"]`);
     if (!item) return;
-
     try {
         const resp = await fetch(`/subtask/${subtaskId}/toggle/`, {
             method: 'POST',
-            headers: { 'X-CSRFToken': getCsrfToken(), 'Content-Type': 'application/json' }
+            headers: { 'X-CSRFToken': CSRF() }
         });
         const data = await resp.json();
-
-        // Update item state
         item.classList.toggle('done', data.completed);
         const check = item.querySelector('.subtask-check');
         check.innerHTML = data.completed ? '<i class="fas fa-check"></i>' : '';
-
-        // Update progress bar
         const bar = document.querySelector(`[data-task-progress="${taskId}"]`);
         if (bar) bar.style.width = data.progress + '%';
-
-        // Update count
         const counts = document.querySelector(`[data-task-counts="${taskId}"]`);
         if (counts) counts.textContent = `${data.completed_count}/${data.total_count}`;
-    } catch (e) {
+    } catch(e) {
         console.error('Subtask toggle failed', e);
     }
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function updateCountLabel() {
+    const cards = document.querySelectorAll('.task-card:not(.removing)');
+    const label = document.getElementById('task-count-label');
+    if (label) {
+        const n = cards.length;
+        label.textContent = `${n} task${n !== 1 ? 's' : ''}`;
+    }
+}
+
+function checkEmpty() {
+    const cards = document.querySelectorAll('.task-card');
+    const container = document.getElementById('task-list-container');
+    if (cards.length === 0 && container) {
+        container.innerHTML = `
+            <div class="text-center py-5">
+                <div style="font-size:3rem;color:var(--text-3);margin-bottom:1rem">✓</div>
+                <div style="font-weight:600;color:var(--text-2);margin-bottom:.5rem">All done!</div>
+                <div style="font-size:.875rem;color:var(--text-3);margin-bottom:1.5rem">No tasks remaining</div>
+                <a href="/task/new/" class="btn btn-primary">
+                    <i class="fas fa-plus me-1" style="font-size:.75rem"></i> New Task
+                </a>
+            </div>`;
+    }
+}
+
+let toastTimer;
+function showToast(msg) {
+    const toast = document.getElementById('recurrence-toast');
+    document.getElementById('recurrence-toast-msg').textContent = msg;
+    toast.style.display = 'block';
+    toast.style.animation = 'none';
+    void toast.offsetWidth; // reflow
+    toast.style.animation = 'slideUp .25s ease';
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { toast.style.display = 'none'; }, 4000);
 }
 </script>
 

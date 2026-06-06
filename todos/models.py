@@ -1,7 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
-
+from datetime import timedelta
+import calendar
 
 class Category(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='categories')
@@ -25,6 +26,13 @@ class Task(models.Model):
         ('urgent', 'Urgent'),
     ]
 
+    RECURRENCE_CHOICES = [
+        ('', 'No recurrence'),
+        ('daily', 'Daily'),
+        ('weekly', 'Weekly'),
+        ('monthly', 'Monthly'),
+    ]
+
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='tasks')
     category = models.ForeignKey(
         Category, on_delete=models.SET_NULL,
@@ -34,7 +42,8 @@ class Task(models.Model):
     description = models.TextField(blank=True)
     completed = models.BooleanField(default=False)
     priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default='medium')
-    due_date = models.DateTimeField(null=True, blank=True)  # Changed to DateTimeField
+    due_date = models.DateTimeField(null=True, blank=True)
+    recurrence = models.CharField(max_length=10, choices=RECURRENCE_CHOICES, blank=True, default='')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -48,6 +57,48 @@ class Task(models.Model):
         if self.due_date and not self.completed:
             return self.due_date < timezone.now()
         return False
+
+    def spawn_next_recurrence(self):
+        """Create the next occurrence when a recurring task is completed."""
+
+        if not self.recurrence or not self.due_date:
+            return None
+
+        base = self.due_date
+        if self.recurrence == 'daily':
+            next_due = base + timedelta(days=1)
+        elif self.recurrence == 'weekly':
+            next_due = base + timedelta(weeks=1)
+        elif self.recurrence == 'monthly':
+            # Same day next month, clamped to last day if needed
+            month = base.month % 12 + 1
+            year = base.year + (1 if base.month == 12 else 0)
+            day = min(base.day, calendar.monthrange(year, month)[1])
+            next_due = base.replace(year=year, month=month, day=day)
+        else:
+            return None
+
+        # Only create if no identical future task already exists
+        exists = Task.objects.filter(
+            user=self.user, title=self.title,
+            due_date=next_due, completed=False
+        ).exists()
+        if exists:
+            return None
+
+        new_task = Task.objects.create(
+            user=self.user,
+            category=self.category,
+            title=self.title,
+            description=self.description,
+            priority=self.priority,
+            due_date=next_due,
+            recurrence=self.recurrence,
+        )
+        # Clone subtasks
+        for st in self.subtasks.order_by('order'):
+            SubTask.objects.create(task=new_task, title=st.title, order=st.order)
+        return new_task
 
     @property
     def completed_subtasks_count(self):

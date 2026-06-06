@@ -1,10 +1,10 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth import login, logout, authenticate
+from django.contrib.auth import login, logout
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib import messages
 from django.http import JsonResponse
-from django.db.models import Q
+from django.db.models import Q, Case, When, Value, IntegerField
 from django.views.decorators.http import require_POST
 from .models import Task, SubTask, Category
 from .forms import TaskForm, TaskFilterForm, CategoryForm
@@ -46,6 +46,17 @@ def logout_view(request):
     return redirect('login')
 
 
+# ─── Priority sort helper ─────────────────────────────────────────────────────
+
+PRIORITY_ORDER = Case(
+    When(priority='urgent', then=Value(0)),
+    When(priority='high',   then=Value(1)),
+    When(priority='medium', then=Value(2)),
+    When(priority='low',    then=Value(3)),
+    output_field=IntegerField(),
+)
+
+
 # ─── Task List ────────────────────────────────────────────────────────────────
 
 @login_required
@@ -54,10 +65,11 @@ def task_list(request):
     filter_form = TaskFilterForm(request.GET, user=request.user)
 
     if filter_form.is_valid():
-        status = filter_form.cleaned_data.get('status')
+        status   = filter_form.cleaned_data.get('status')
         priority = filter_form.cleaned_data.get('priority')
-        search = filter_form.cleaned_data.get('search')
+        search   = filter_form.cleaned_data.get('search')
         category = filter_form.cleaned_data.get('category')
+        sort     = filter_form.cleaned_data.get('sort')
 
         if status == 'active':
             tasks = tasks.filter(completed=False)
@@ -70,33 +82,41 @@ def task_list(request):
         if category:
             tasks = tasks.filter(category=category)
 
+        # Sorting
+        if sort == 'due_date':
+            from django.db.models.functions import Coalesce
+            from django.utils import timezone
+            import datetime
+            far_future = timezone.now() + datetime.timedelta(days=36500)
+            tasks = tasks.annotate(
+                due_sort=Coalesce('due_date', Value(far_future))
+            ).order_by('due_sort')
+        elif sort == 'priority':
+            tasks = tasks.annotate(pri_order=PRIORITY_ORDER).order_by('pri_order')
+        elif sort == 'created_at':
+            tasks = tasks.order_by('created_at')
+        elif sort == '-created_at':
+            tasks = tasks.order_by('-created_at')
+
     stats = {
-        'total': Task.objects.filter(user=request.user).count(),
+        'total':     Task.objects.filter(user=request.user).count(),
         'completed': Task.objects.filter(user=request.user, completed=True).count(),
-        'active': Task.objects.filter(user=request.user, completed=False).count(),
-        'urgent': Task.objects.filter(user=request.user, priority='urgent', completed=False).count(),
+        'active':    Task.objects.filter(user=request.user, completed=False).count(),
+        'urgent':    Task.objects.filter(user=request.user, priority='urgent', completed=False).count(),
     }
-    categories = Category.objects.filter(user=request.user)
 
     return render(request, 'todos/task_list.html', {
         'tasks': tasks,
         'filter_form': filter_form,
         'stats': stats,
-        'categories': categories,
     })
 
 
 # ─── Task CRUD ────────────────────────────────────────────────────────────────
 
 def _save_subtasks(task, subtask_titles_raw):
-    """
-    Sync subtask rows from the hidden textarea value.
-    Preserves existing subtasks (by order/position) where possible.
-    """
     new_titles = [t.strip() for t in (subtask_titles_raw or '').split('\n') if t.strip()]
     existing = list(task.subtasks.order_by('order', 'created_at'))
-
-    # Update or create
     for i, title in enumerate(new_titles):
         if i < len(existing):
             if existing[i].title != title:
@@ -106,8 +126,6 @@ def _save_subtasks(task, subtask_titles_raw):
             existing[i].save(update_fields=['order'])
         else:
             SubTask.objects.create(task=task, title=title, order=i)
-
-    # Delete extras
     if len(new_titles) < len(existing):
         for leftover in existing[len(new_titles):]:
             leftover.delete()
@@ -144,25 +162,45 @@ def task_edit(request, pk):
     return render(request, 'todos/task_form.html', {'form': form, 'action': 'Edit', 'task': task})
 
 
+# ─── AJAX: Task Toggle ────────────────────────────────────────────────────────
+
 @login_required
+@require_POST
 def task_toggle(request, pk):
     task = get_object_or_404(Task, pk=pk, user=request.user)
     task.completed = not task.completed
     task.save()
-    return redirect('task_list')
 
+    spawned = None
+    if task.completed and task.recurrence:
+        new_task = task.spawn_next_recurrence()
+        if new_task:
+            spawned = {
+                'id': new_task.pk,
+                'title': new_task.title,
+                'due_date': new_task.due_date.isoformat() if new_task.due_date else None,
+                'recurrence': new_task.recurrence,
+            }
+
+    return JsonResponse({
+        'ok': True,
+        'completed': task.completed,
+        'task_id': task.pk,
+        'spawned': spawned,
+    })
+
+
+# ─── AJAX: Task Delete ────────────────────────────────────────────────────────
 
 @login_required
+@require_POST
 def task_delete(request, pk):
     task = get_object_or_404(Task, pk=pk, user=request.user)
-    if request.method == 'POST':
-        task.delete()
-        messages.success(request, 'Task deleted.')
-        return redirect('task_list')
-    return render(request, 'todos/task_confirm_delete.html', {'task': task})
+    task.delete()
+    return JsonResponse({'ok': True, 'task_id': pk})
 
 
-# ─── Subtask Toggle (AJAX) ────────────────────────────────────────────────────
+# ─── AJAX: Subtask Toggle ─────────────────────────────────────────────────────
 
 @login_required
 @require_POST
@@ -185,10 +223,7 @@ def subtask_toggle(request, pk):
 def category_list(request):
     categories = Category.objects.filter(user=request.user)
     form = CategoryForm()
-    return render(request, 'todos/category_list.html', {
-        'categories': categories,
-        'form': form,
-    })
+    return render(request, 'todos/category_list.html', {'categories': categories, 'form': form})
 
 
 @login_required

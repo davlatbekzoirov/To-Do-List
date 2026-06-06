@@ -32,7 +32,6 @@ class CategoryForm(forms.ModelForm):
 
 
 class TaskForm(forms.ModelForm):
-    # Subtask titles submitted as a newline-separated string from JS
     subtask_titles = forms.CharField(
         required=False,
         widget=forms.HiddenInput()
@@ -40,7 +39,7 @@ class TaskForm(forms.ModelForm):
 
     class Meta:
         model = Task
-        fields = ['title', 'description', 'priority', 'category', 'due_date']
+        fields = ['title', 'description', 'priority', 'category', 'due_date', 'recurrence']
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -57,6 +56,7 @@ class TaskForm(forms.ModelForm):
                 'class': 'form-control',
                 'type': 'datetime-local',
             }, format='%Y-%m-%dT%H:%M'),
+            'recurrence': forms.Select(attrs={'class': 'form-select'}),
         }
 
     def __init__(self, *args, user=None, **kwargs):
@@ -94,6 +94,13 @@ class TaskFilterForm(forms.Form):
         ('completed', 'Completed'),
     ]
     PRIORITY_CHOICES = [('', 'All Priorities')] + Task.PRIORITY_CHOICES
+    SORT_CHOICES = [
+        ('', 'Sort: Default'),
+        ('due_date', 'Due Date ↑'),
+        ('priority', 'Priority ↓'),
+        ('created_at', 'Oldest First'),
+        ('-created_at', 'Newest First'),
+    ]
 
     status = forms.ChoiceField(choices=STATUS_CHOICES, required=False,
                                widget=forms.Select(attrs={'class': 'form-select'}))
@@ -105,6 +112,8 @@ class TaskFilterForm(forms.Form):
         empty_label='All Categories',
         widget=forms.Select(attrs={'class': 'form-select'})
     )
+    sort = forms.ChoiceField(choices=SORT_CHOICES, required=False,
+                             widget=forms.Select(attrs={'class': 'form-select'}))
     search = forms.CharField(required=False, widget=forms.TextInput(attrs={
         'class': 'form-control',
         'placeholder': 'Search tasks…'
