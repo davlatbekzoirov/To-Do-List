@@ -71,6 +71,25 @@
     </div>
 </div>
 
+<div class="card border-0 shadow-sm mt-4">
+    <div class="card-body p-4">
+        <h6 style="font-weight:600;" class="mb-3">Backup & Profile Tools</h6>
+        <div class="d-flex flex-wrap gap-2 align-items-center">
+            <a href="{% url 'export_data' %}" class="btn btn-outline-primary btn-sm rounded-pill">
+                <i class="fas fa-download me-1"></i> Export Task Profile (.json)
+            </a>
+            
+            <form action="{% url 'import_data' %}" method="post" enctype="multipart/form-data" class="d-flex align-items-center gap-2 m-0">
+                {% csrf_token %}
+                <input type="file" name="backup_file" accept=".json" class="form-control form-control-sm" required style="max-width:210px">
+                <button type="submit" class="btn btn-primary btn-sm rounded-pill">
+                    <i class="fas fa-upload me-1"></i> Import Backup
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
 <style>
 .form-control-color { width: 48px !important; height: 38px; padding: 2px 4px; cursor: pointer; }
 </style>

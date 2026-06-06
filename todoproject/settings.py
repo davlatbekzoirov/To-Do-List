@@ -1,4 +1,5 @@
 from pathlib import Path
+from celery.schedules import crontab
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-change-this-in-production-use-env-variable'
@@ -70,4 +71,19 @@ LOGIN_REDIRECT_URL = 'task_list'
 
 
 STATIC_URL = 'static/'
-STATIC_ROOT = BASE_DIR / 'staticfiles'   # ← add this
+STATIC_ROOT = BASE_DIR / 'staticfiles'   
+
+
+CELERY_BROKER_URL = 'redis://localhost:6379/0'
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+CELERY_TIMEZONE = TIME_ZONE
+
+CELERY_BEAT_SCHEDULE = {
+    'dispatch_upcoming_due_reminders_every_hour': {
+        'task': 'todos.tasks.send_upcoming_task_reminders',
+        'schedule': crontab(minute=0),
+    },
+}
+
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+DEFAULT_FROM_EMAIL = 'reminders@taskflow.app'

@@ -303,6 +303,7 @@
             TaskFlow
         </a>
         {% if user.is_authenticated %}
+        <a href="{% url 'analytics' %}" class="nav-link-item {% if request.resolver_match.url_name == 'analytics' %}active{% endif %}">Analytics</a>
         <a href="{% url 'task_list' %}" class="nav-link-item {% if request.resolver_match.url_name == 'task_list' %}active{% endif %}">Tasks</a>
         <a href="{% url 'category_list' %}" class="nav-link-item {% if 'category' in request.resolver_match.url_name %}active{% endif %}">Categories</a>
         {% endif %}

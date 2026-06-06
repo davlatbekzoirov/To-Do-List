@@ -21,4 +21,10 @@ urlpatterns = [
     path('register/', views.register_view, name='register'),
     path('login/', views.login_view, name='login'),
     path('logout/', views.logout_view, name='logout'),
+
+    # Analysis
+    path('analytics/', views.analytics_view, name='analytics'),
+
+    path('data/export/', views.export_data_json, name='export_data'),
+    path('data/import/', views.import_data_json, name='import_data'),
 ]
