@@ -35,17 +35,6 @@ TaskFlow is a modern, responsive, and minimalist Django-based To-Do application.
 
 ---
 
-## 🛠️ Technology Stack
-
-* **Backend Framework:** Django (Python)
-* **Task Scheduler:** Celery (Asynchronous background worker)
-* **Message Broker:** Redis
-* **Database:** SQLite 3
-* **Frontend UI:** Bootstrap 5 (with Glassmorphism accents)
-* **Iconography:** FontAwesome 6
-
----
-
 ## 🧠 How Celery is Used
 
 TaskFlow relies on Celery and Redis to handle time-heavy calculations asynchronously in the background so the user interface never lags.
@@ -59,22 +48,3 @@ The automation logic is managed through specific background task routines define
 ### ⚙️ Architecture Workflow
 ```text
 [ Django Models ] ──> [ Celery Beat Clock ] ──> [ Redis Queue ] ──> [ Celery Worker ] ──> [ Live UI Notification ]
-
----
-
-## 🚀 Quick Setup Guide
-
-Get your local instance of TaskFlow up and running smoothly.
-
-### 1. Environment Setup
-Clone or download this repository, navigate to the project directory, and initialize a Python virtual environment:
-
-```bash
-# Create the virtual environment
-python3 -m venv venv
-
-# Activate the environment
-# On macOS/Linux:
-source venv/bin/activate
-# On Windows:
-venv\Scripts\activate
