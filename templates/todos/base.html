@@ -292,6 +292,59 @@
             color: var(--text-3);
             margin-bottom: 8px;
         }
+
+        .notification-dropdown {
+            width: 320px;
+            max-height: 420px;
+            overflow-y: auto;
+            border: 1px solid rgba(0,0,0,0.08);
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1);
+            border-radius: 12px;
+            padding: 0;
+        }
+        .notification-item {
+            padding: 12px 16px;
+            border-bottom: 1px solid rgba(0,0,0,0.04);
+            font-size: 0.85rem;
+            white-space: normal;
+            color: #374151;
+            transition: background 0.15s ease;
+        }
+        .notification-item:hover {
+            background-color: #f9fafb;
+        }
+        .notification-item:last-child {
+            border-bottom: none;
+        }
+        .bell-btn {
+            position: relative;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: none;
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        .bell-btn:hover, .bell-btn:focus {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+        .badge-pulse {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            background-color: #ef4444; /* Match urgent red color */
+            color: white;
+            font-size: 0.65rem;
+            font-weight: 700;
+            padding: 2px 5px;
+            border-radius: 50%;
+            border: 2px solid #212529; /* Blends nicely with dark navbars */
+        }
     </style>
 </head>
 <body>
@@ -307,8 +360,25 @@
         <a href="{% url 'task_list' %}" class="nav-link-item {% if request.resolver_match.url_name == 'task_list' %}active{% endif %}">Tasks</a>
         <a href="{% url 'category_list' %}" class="nav-link-item {% if 'category' in request.resolver_match.url_name %}active{% endif %}">Categories</a>
         {% endif %}
+        
         {% if user.is_authenticated %}
         <div class="ms-auto d-flex align-items-center gap-3">
+            
+            <div class="dropdown" id="notificationCenter">
+                <button class="bell-btn" type="button" id="notifBell" data-bs-toggle="dropdown" aria-expanded="false" onclick="clearNotifBadge()">
+                    <i class="fas fa-bell"></i>
+                    <span class="badge-pulse d-none" id="notifBadge">0</span>
+                </button>
+                <div class="dropdown-menu dropdown-menu-end notification-dropdown" aria-labelledby="notifBell">
+                    <div class="d-flex align-items-center justify-content-between p-3 border-bottom bg-light rounded-top">
+                        <h6 class="m-0 font-weight-bold" style="font-size: 0.9rem;">Notifications</h6>
+                        <span class="badge bg-secondary-subtle text-secondary small rounded-pill" id="notifCountLabel">0 new</span>
+                    </div>
+                    <div id="notifItemsContainer">
+                        </div>
+                </div>
+            </div>
+
             <span class="text-white bg-white bg-opacity-10 px-3 py-1.5 rounded-pill small">
                 <i class="fas fa-user me-2"></i>{{ user.username }}
             </span>
@@ -327,6 +397,99 @@
     {% endfor %}
     {% block content %}{% endblock %}
 </div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+{% if user.is_authenticated %}
+<script>
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    async function checkNotifications() {
+        try {
+            const response = await fetch("{% url 'fetch_notifications' %}");
+            if (!response.ok) return;
+            const data = await response.json();
+            
+            const badge = document.getElementById('notifBadge');
+            const countLabel = document.getElementById('notifCountLabel');
+            const container = document.getElementById('notifItemsContainer');
+            
+            // Set up metrics indicators
+            countLabel.innerText = `${data.unread_count} unread`;
+            if (data.unread_count > 0) {
+                badge.innerText = data.unread_count;
+                badge.classList.remove('d-none');
+            } else {
+                badge.classList.add('d-none');
+            }
+            
+            // Construct the markup rows
+            if (data.notifications.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-4 text-muted small">
+                        <i class="fas fa-check-circle text-success mb-2 d-block" style="font-size: 1.25rem;"></i>
+                        Your workspace is completely caught up!
+                    </div>`;
+            } else {
+                container.innerHTML = data.notifications.map(n => {
+                    let icon = 'fa-bell text-primary';
+                    if (n.type === 'overdue') icon = 'fa-exclamation-triangle text-danger';
+                    if (n.type === 'recurrence') icon = 'fa-sync text-success';
+                    
+                    return `
+                        <div class="notification-item d-flex align-items-start gap-2">
+                            <i class="fas ${icon} mt-1" style="font-size: 0.8rem;"></i>
+                            <div>
+                                <div class="mb-0">${n.message}</div>
+                                <span class="text-muted" style="font-size: 0.7rem;">${n.created_at}</span>
+                            </div>
+                        </div>`;
+                }).join('');
+            }
+        } catch (error) {
+            console.error("Failed structural polling checking routine:", error);
+        }
+    }
+
+    async function clearNotifBadge() {
+        const badge = document.getElementById('notifBadge');
+        // If there's an active count showing, mark everything as read on the backend database
+        if (badge && !badge.classList.contains('d-none')) {
+            badge.classList.add('d-none');
+            try {
+                await fetch("{% url 'mark_notifications_read' %}", {
+                    method: "POST",
+                    headers: {
+                        "X-CSRFToken": getCookie('csrftoken'),
+                        "Content-Type": "application/json"
+                    }
+                });
+            } catch (e) {
+                console.error("Failed structural write execution to clear alerts:", e);
+            }
+        }
+    }
+
+    // Trigger immediate execution upon layout initialization
+    document.addEventListener("DOMContentLoaded", () => {
+        checkNotifications();
+        // Set regular continuous interval scan logic (Checks engine loop update maps every 30 seconds)
+        setInterval(checkNotifications, 30000);
+    });
+</script>
+{% endif %}
 </body>
 </html>

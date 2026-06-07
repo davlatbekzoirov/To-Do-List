@@ -8,7 +8,7 @@ from django.contrib import messages
 from django.http import JsonResponse, HttpResponse
 from django.db.models import Q, Case, When, Value, IntegerField
 from django.views.decorators.http import require_POST
-from .models import Task, SubTask, Category
+from .models import Task, SubTask, Category, Notification
 from .forms import TaskForm, TaskFilterForm, CategoryForm
 from django.db.models import Count
 from django.utils import timezone
@@ -384,3 +384,57 @@ def import_data_json(request):
         messages.error(request, f'Structural failure reading data architecture file: {str(e)}')
         
     return redirect('task_list')
+    
+@login_required
+@require_POST
+def task_toggle(request, pk):
+    task = get_object_or_404(Task, pk=pk, user=request.user)
+    task.completed = not task.completed
+    task.save()
+
+    spawned = None
+    if task.completed and task.recurrence:
+        new_task = task.spawn_next_recurrence()
+        if new_task:
+            # CREATE A NOTIFICATION RECORD
+            msg = f"Recurring schedule spawned a new task instance: '{new_task.title}'"
+            Notification.objects.create(
+                user=request.user,
+                task=new_task,
+                notification_type='recurrence',
+                message=msg
+            )
+            
+            spawned = {
+                'id': new_task.pk,
+                'title': new_task.title,
+                'due_date': new_task.due_date.isoformat() if new_task.due_date else None,
+                'recurrence': new_task.recurrence,
+            }
+
+    return JsonResponse({
+        'ok': True,
+        'completed': task.completed,
+        'task_id': task.pk,
+        'spawned': spawned,
+    })
+
+
+@login_required
+def fetch_notifications(request):
+    """Returns json list of unread notification messages for the nav-bar badge."""
+    notifications = Notification.objects.filter(user=request.user, is_read=False)[:10]
+    data = [{
+        'id': n.id,
+        'type': n.notification_type,
+        'message': n.message,
+        'created_at': n.created_at.strftime('%b %d, %H:%M')
+    } for n in notifications]
+    return JsonResponse({'notifications': data, 'unread_count': len(data)})
+
+@login_required
+@require_POST
+def mark_notifications_read(request):
+    """Flags all user alerts as read when they open up or click clear on the panel."""
+    Notification.objects.filter(user=request.user, is_read=False).update(is_read=True)
+    return JsonResponse({'ok': True})

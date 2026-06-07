@@ -1,5 +1,6 @@
 from pathlib import Path
 from celery.schedules import crontab
+from datetime import timedelta
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-change-this-in-production-use-env-variable'
@@ -79,9 +80,13 @@ CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
 CELERY_TIMEZONE = TIME_ZONE
 
 CELERY_BEAT_SCHEDULE = {
-    'dispatch_upcoming_due_reminders_every_hour': {
-        'task': 'todos.tasks.send_upcoming_task_reminders',
-        'schedule': crontab(minute=0),
+    'scan_deadline_reminders_every_15_mins': {
+        'task': 'todos.tasks.send_deadline_reminders',
+        'schedule': timedelta(minutes=15),
+    },
+    'dispatch_daily_overdue_digests_morning': {
+        'task': 'todos.tasks.generate_daily_overdue_digests',
+        'schedule': crontab(hour=7, minute=30),
     },
 }
 

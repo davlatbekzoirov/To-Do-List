@@ -27,4 +27,8 @@ urlpatterns = [
 
     path('data/export/', views.export_data_json, name='export_data'),
     path('data/import/', views.import_data_json, name='import_data'),
+
+    # Notifications API backend
+    path('api/notifications/', views.fetch_notifications, name='fetch_notifications'),
+    path('api/notifications/read/', views.mark_notifications_read, name='mark_notifications_read'),
 ]
