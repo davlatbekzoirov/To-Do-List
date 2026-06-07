@@ -1,15 +1,15 @@
 # ⚡ TaskFlow
 
-TaskFlow is a modern, responsive, and minimalist Django-based To-Do application. Built for individual productivity, it features user authentication, dynamic task filtering, urgency metrics dashboards, visual priority tracking, and automated background reminders.
+TaskFlow is a modern, responsive, and minimalist Django-based To-Do application. Built for individual productivity, it features user authentication, dynamic task filtering, urgency metrics dashboards, visual priority tracking, automated background reminders, strict data security, and an integrated focus tracking engine.
 
 ---
 
 ## ✨ Features
 
-* **🔒 Secure Authentication:** Built-in registration, login, and logout systems ensuring your tasks are completely private to your account.
-* **📊 Dynamic Metrics Dashboard:** Real-time summary counters tracking your Total, Active, Completed, and Urgent tasks at a glance.
+* **🔒 Security, Governance & Compliance:** Built-in secure registration, login, and custom password complexity validators. Includes session inactivity timeout protection for shared devices and a tamper-proof internal AuditLog system to track high-level actions with hashed IP records.
+* **🧠 Intelligent Focus & Pomodoro Engine:** A built-in 25-minute Pomodoro timer directly on individual task view pages that tracks focus sessions in real time and automatically records actual minutes spent to your account ledger.
+* **📊 Dual Analytics Dashboard:** Visually displays task counts across categories alongside an advanced **Estimated Time vs. Actual Time Spent** comparison bar chart to measure personal efficiency.
 * **🔔 Time-Sensitive Notification Engine:** Proactive background worker scans your tasks and delivers in-app alert badges and emails 24 hours and 1 hour before deadlines.
-* **🎨 Redesigned Visual Analytics:** Clean layout accented with intuitive color-coded borders and badges based on task priorities.
 * **🔍 Power Filtering & Search:** Instantly narrow down workflows by status (Active/Completed), priority level, category, or text-based search queries.
 * **⏰ Overdue Detection:** Automated checking mechanism that visually highlights tasks that have passed their target completion due date.
 
