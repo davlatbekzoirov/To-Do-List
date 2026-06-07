@@ -1,0 +1,491 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}TaskFlow{% endblock %}</title>
+    <link rel="icon" href="{% static 'task/favicon.svg' %}?v=1" type="image/svg+xml">    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #f0f2f5;
+            --surface: #ffffff;
+            --surface-2: #f8f9fa;
+            --border: #dee2e6;
+            --text: #212529;
+            --text-2: #6c757d;
+            --text-3: #adb5bd;
+            --accent: #0d6efd;
+            --accent-light: #e7f1ff;
+            --accent-dark: #0b5ed7;
+            --low: #6c757d;
+            --medium: #0d6efd;
+            --high: #fd7e14;
+            --urgent: #dc3545;
+            --success: #28a745;
+            --radius: 10px;
+            --radius-sm: 6px;
+            --shadow: 0 1px 3px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.04);
+            --shadow-md: 0 2px 8px rgba(0,0,0,.08), 0 8px 32px rgba(0,0,0,.06);
+        }
+
+        *, *::before, *::after { box-sizing: border-box; }
+
+        body {
+            background: var(--bg);
+            font-family: 'DM Sans', sans-serif;
+            color: var(--text);
+            min-height: 100vh;
+            font-size: 15px;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* ── Navbar ── */
+        .navbar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+            border-bottom: none;
+            padding: 0 0;
+            height: 56px;
+        }
+        .navbar .container { height: 100%; }
+        .navbar-brand {
+            font-weight: 600;
+            font-size: 1.05rem;
+            color: white !important;
+            letter-spacing: -.01em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .brand-dot {
+            width: 8px; height: 8px;
+            background: rgba(255,255,255,.7);
+            border-radius: 50%;
+            display: inline-block;
+        }
+        .nav-link-item {
+            font-size: .85rem;
+            color: rgba(255,255,255,.8);
+            text-decoration: none;
+            padding: 4px 10px;
+            border-radius: var(--radius-sm);
+            transition: all .15s;
+            font-weight: 500;
+        }
+        .nav-link-item:hover { color: white; background: rgba(255,255,255,.15); }
+        .nav-link-item.active { color: white; background: rgba(255,255,255,.2); }
+        .nav-user {
+            font-size: .82rem;
+            color: rgba(255,255,255,.75);
+            font-weight: 500;
+            letter-spacing: .01em;
+        }
+        .btn-logout {
+            font-size: .82rem;
+            color: white;
+            background: none;
+            border: 1px solid rgba(255,255,255,.4);
+            border-radius: var(--radius-sm);
+            padding: 4px 12px;
+            cursor: pointer;
+            transition: all .15s;
+            font-family: inherit;
+        }
+        .btn-logout:hover { border-color: white; background: rgba(255,255,255,.1); }
+
+        /* ── Cards ── */
+        .card {
+            border: 1px solid var(--border) !important;
+            border-radius: var(--radius) !important;
+            background: var(--surface);
+            box-shadow: var(--shadow);
+        }
+
+        /* ── Stat cards ── */
+        .stat-card {
+            border-radius: var(--radius) !important;
+            padding: 18px 20px !important;
+            cursor: default;
+            transition: transform .2s, box-shadow .2s;
+        }
+        .stat-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+        .stat-num { font-size: 2rem; font-weight: 600; line-height: 1; letter-spacing: -.03em; }
+        .stat-label { font-size: .75rem; color: var(--text-3); margin-top: 4px; font-weight: 500; letter-spacing: .04em; text-transform: uppercase; }
+
+        /* ── Task cards ── */
+        .task-card {
+            border-radius: var(--radius) !important;
+            margin-bottom: 8px;
+            transition: all .2s;
+            border-left: 3px solid var(--border) !important;
+            background: var(--surface);
+        }
+        .task-card:hover { box-shadow: var(--shadow-md); transform: translateX(1px); }
+        .task-card.completed { opacity: .55; }
+        .task-card.priority-low    { border-left-color: var(--low) !important; }
+        .task-card.priority-medium { border-left-color: var(--medium) !important; }
+        .task-card.priority-high   { border-left-color: var(--high) !important; }
+        .task-card.priority-urgent { border-left-color: var(--urgent) !important; }
+
+        /* ── Priority badges ── */
+        .badge-priority {
+            font-size: .68rem;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 100px;
+            letter-spacing: .04em;
+            text-transform: uppercase;
+        }
+        .badge-low    { background: #f1f2f4; color: var(--low); }
+        .badge-medium { background: #eff6ff; color: var(--medium); }
+        .badge-high   { background: #fffbeb; color: var(--high); }
+        .badge-urgent { background: #fef2f2; color: var(--urgent); }
+
+        /* ── Category pill ── */
+        .cat-pill {
+            font-size: .68rem;
+            font-weight: 600;
+            padding: 2px 10px;
+            border-radius: 100px;
+            letter-spacing: .03em;
+        }
+
+        /* ── Toggle circle ── */
+        .toggle-btn {
+            width: 24px; height: 24px;
+            border-radius: 50%;
+            border: 2px solid var(--border);
+            background: none;
+            cursor: pointer;
+            transition: all .15s;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+            text-decoration: none;
+            color: var(--text-3);
+        }
+        .toggle-btn:hover { border-color: var(--success); color: var(--success); }
+        .toggle-btn.done { background: var(--success); border-color: var(--success); color: white; }
+
+        /* ── Action buttons ── */
+        .btn-icon {
+            width: 30px; height: 30px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border);
+            background: none;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: .75rem;
+            color: var(--text-3);
+            text-decoration: none;
+            transition: all .15s;
+        }
+        .btn-icon:hover { border-color: var(--text-2); color: var(--text); }
+        .btn-icon.danger:hover { border-color: var(--urgent); color: var(--urgent); background: #fef2f2; }
+
+        /* ── Primary button ── */
+        .btn-primary {
+            background: var(--accent) !important;
+            border-color: var(--accent) !important;
+            color: white !important;
+            font-weight: 500;
+            font-size: .875rem;
+            border-radius: var(--radius-sm) !important;
+            padding: 8px 16px;
+            transition: all .15s;
+            font-family: inherit;
+        }
+        .btn-primary:hover { background: var(--accent-dark) !important; border-color: var(--accent-dark) !important; }
+        .btn-outline-secondary {
+            border-color: var(--border) !important;
+            color: var(--text-2) !important;
+            font-weight: 500;
+            font-size: .875rem;
+            border-radius: var(--radius-sm) !important;
+            padding: 8px 16px;
+            background: none !important;
+            transition: all .15s;
+            font-family: inherit;
+        }
+        .btn-outline-secondary:hover { border-color: var(--text-2) !important; color: var(--text) !important; }
+
+        /* ── Form controls ── */
+        .form-control, .form-select {
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm) !important;
+            font-size: .875rem;
+            font-family: inherit;
+            color: var(--text);
+            background: var(--surface);
+            transition: border-color .15s, box-shadow .15s;
+        }
+        .form-control:focus, .form-select:focus {
+            border-color: var(--accent) !important;
+            box-shadow: 0 0 0 3px rgba(212,98,42,.12) !important;
+        }
+        .form-label { font-size: .8rem; font-weight: 600; color: var(--text-2); letter-spacing: .03em; text-transform: uppercase; margin-bottom: 5px; }
+
+        /* ── Overdue ── */
+        .overdue-text { color: var(--urgent); font-weight: 500; }
+        .completed-text { text-decoration: line-through; color: var(--text-3); }
+
+        /* ── Subtask progress ── */
+        .progress { height: 4px; border-radius: 100px; background: var(--surface-2); }
+        .progress-bar { background: var(--success); border-radius: 100px; transition: width .3s; }
+
+        /* ── Subtask list ── */
+        .subtask-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 4px 0;
+            font-size: .82rem;
+            color: var(--text-2);
+            cursor: pointer;
+            transition: color .15s;
+        }
+        .subtask-item:hover { color: var(--text); }
+        .subtask-item.done { text-decoration: line-through; color: var(--text-3); }
+        .subtask-check {
+            width: 16px; height: 16px;
+            border: 1.5px solid var(--border);
+            border-radius: 3px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: .6rem;
+            color: transparent;
+            transition: all .15s;
+            flex-shrink: 0;
+        }
+        .subtask-item.done .subtask-check {
+            background: var(--success);
+            border-color: var(--success);
+            color: white;
+        }
+
+        /* ── Alerts ── */
+        .alert {
+            border-radius: var(--radius) !important;
+            font-size: .875rem;
+            border: 1px solid transparent;
+        }
+        .alert-success { background: #f0fdf4; color: #166534; border-color: #bbf7d0; }
+        .alert-danger  { background: #fef2f2; color: #991b1b; border-color: #fecaca; }
+
+        /* ── Due time ── */
+        .due-time {
+            font-family: 'DM Mono', monospace;
+            font-size: .75rem;
+        }
+
+        /* ── Section divider ── */
+        .section-label {
+            font-size: .7rem;
+            font-weight: 700;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+            color: var(--text-3);
+            margin-bottom: 8px;
+        }
+
+        .notification-dropdown {
+            width: 320px;
+            max-height: 420px;
+            overflow-y: auto;
+            border: 1px solid rgba(0,0,0,0.08);
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1);
+            border-radius: 12px;
+            padding: 0;
+        }
+        .notification-item {
+            padding: 12px 16px;
+            border-bottom: 1px solid rgba(0,0,0,0.04);
+            font-size: 0.85rem;
+            white-space: normal;
+            color: #374151;
+            transition: background 0.15s ease;
+        }
+        .notification-item:hover {
+            background-color: #f9fafb;
+        }
+        .notification-item:last-child {
+            border-bottom: none;
+        }
+        .bell-btn {
+            position: relative;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: none;
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        .bell-btn:hover, .bell-btn:focus {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+        .badge-pulse {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            background-color: #ef4444; /* Match urgent red color */
+            color: white;
+            font-size: 0.65rem;
+            font-weight: 700;
+            padding: 2px 5px;
+            border-radius: 50%;
+            border: 2px solid #212529; /* Blends nicely with dark navbars */
+        }
+    </style>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg">
+    <div class="container d-flex align-items-center gap-3">
+        <a class="navbar-brand" href="{% url 'task_list' %}">
+            <img src="{% static 'task/logo.svg' %}" alt="TaskFlow logo"
+                width="30" height="30" style="margin-right:8px;vertical-align:middle">
+            TaskFlow
+        </a>
+        {% if user.is_authenticated %}
+        <a href="{% url 'analytics' %}" class="nav-link-item {% if request.resolver_match.url_name == 'analytics' %}active{% endif %}">Analytics</a>
+        <a href="{% url 'task_list' %}" class="nav-link-item {% if request.resolver_match.url_name == 'task_list' %}active{% endif %}">Tasks</a>
+        <a href="{% url 'category_list' %}" class="nav-link-item {% if 'category' in request.resolver_match.url_name %}active{% endif %}">Categories</a>
+        {% endif %}
+        
+        {% if user.is_authenticated %}
+        <div class="ms-auto d-flex align-items-center gap-3">
+            
+            <div class="dropdown" id="notificationCenter">
+                <button class="bell-btn" type="button" id="notifBell" data-bs-toggle="dropdown" aria-expanded="false" onclick="clearNotifBadge()">
+                    <i class="fas fa-bell"></i>
+                    <span class="badge-pulse d-none" id="notifBadge">0</span>
+                </button>
+                <div class="dropdown-menu dropdown-menu-end notification-dropdown" aria-labelledby="notifBell">
+                    <div class="d-flex align-items-center justify-content-between p-3 border-bottom bg-light rounded-top">
+                        <h6 class="m-0 font-weight-bold" style="font-size: 0.9rem;">Notifications</h6>
+                        <span class="badge bg-secondary-subtle text-secondary small rounded-pill" id="notifCountLabel">0 new</span>
+                    </div>
+                    <div id="notifItemsContainer"></div>
+                </div>
+            </div>
+
+            <span class="text-white bg-white bg-opacity-10 px-3 py-1.5 rounded-pill small">
+                <i class="fas fa-user me-2"></i>{{ user.username }}
+            </span>
+            <a href="{% url 'logout' %}" class="btn btn-outline-light btn-sm px-3 rounded-pill">Logout</a>
+        </div>
+        {% endif %}
+    </div>
+</nav>
+
+<div class="container mt-4" style="max-width:860px">
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }} alert-dismissible fade show mb-3" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endfor %}
+    {% block content %}{% endblock %}
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+{% if user.is_authenticated %}
+<script>
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    async function checkNotifications() {
+        try {
+            // Corrected namespace lookup to use notification app namespace
+            const response = await fetch("{% url 'fetch_notifications' %}");
+            if (!response.ok) return;
+            const data = await response.json();
+            
+            const badge = document.getElementById('notifBadge');
+            const countLabel = document.getElementById('notifCountLabel');
+            const container = document.getElementById('notifItemsContainer');
+            
+            countLabel.innerText = `${data.unread_count} unread`;
+            if (data.unread_count > 0) {
+                badge.innerText = data.unread_count;
+                badge.classList.remove('d-none');
+            } else {
+                badge.classList.add('d-none');
+            }
+            
+            if (data.notifications.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-4 text-muted small">
+                        <i class="fas fa-check-circle text-success mb-2 d-block" style="font-size: 1.25rem;"></i>
+                        Your workspace is completely caught up!
+                    </div>`;
+            } else {
+                container.innerHTML = data.notifications.map(n => {
+                    let icon = 'fa-bell text-primary';
+                    if (n.type === 'overdue') icon = 'fa-exclamation-triangle text-danger';
+                    if (n.type === 'recurrence') icon = 'fa-sync text-success';
+                    
+                    return `
+                        <div class="notification-item d-flex align-items-start gap-2">
+                            <i class="fas ${icon} mt-1" style="font-size: 0.8rem;"></i>
+                            <div>
+                                <div class="mb-0">${n.message}</div>
+                                <span class="text-muted" style="font-size: 0.7rem;">${n.created_at}</span>
+                            </div>
+                        </div>`;
+                }).join('');
+            }
+        } catch (error) {
+            console.error("Failed structural polling checking routine:", error);
+        }
+    }
+
+    async function clearNotifBadge() {
+        const badge = document.getElementById('notifBadge');
+        if (badge && !badge.classList.contains('d-none')) {
+            badge.classList.add('d-none');
+            try {
+                // Corrected namespace lookup to use notification app namespace
+                await fetch("{% url 'mark_notifications_read' %}", {
+                    method: "POST",
+                    headers: {
+                        "X-CSRFToken": getCookie('csrftoken'),
+                        "Content-Type": "application/json"
+                    }
+                });
+            } catch (e) {
+                console.error("Failed structural write execution to clear alerts:", e);
+            }
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+        checkNotifications();
+        setInterval(checkNotifications, 30000);
+    });
+</script>
+{% endif %}
+</body>
+</html>
