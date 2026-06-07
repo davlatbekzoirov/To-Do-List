@@ -46,6 +46,22 @@ TaskFlow is a modern, responsive, and minimalist Django-based To-Do application.
 
 ---
 
+## 🧠 How Celery is Used
+
+TaskFlow relies on Celery and Redis to handle time-heavy calculations asynchronously in the background so the user interface never lags.
+
+### 🕒 Scheduled Background Workflows
+The automation logic is managed through specific background task routines defined in `todos/tasks.py`:
+
+1. **`send_deadline_reminders` (Runs every 15 minutes):** Scans the active database to find tasks approaching their deadlines. It handles creating in-app alerts and processing reminder emails at exactly the **24-hour** and **1-hour** remaining milestones.
+2. **`generate_daily_overdue_digests` (Runs every morning):** Pools overdue items for each user, updates the global overdue notification log, and dispatches a comprehensive diagnostic summary email directly to the user.
+
+### ⚙️ Architecture Workflow
+```text
+[ Django Models ] ──> [ Celery Beat Clock ] ──> [ Redis Queue ] ──> [ Celery Worker ] ──> [ Live UI Notification ]
+
+---
+
 ## 🚀 Quick Setup Guide
 
 Get your local instance of TaskFlow up and running smoothly.
@@ -62,19 +78,3 @@ python3 -m venv venv
 source venv/bin/activate
 # On Windows:
 venv\Scripts\activate
-
----
-
-## 🧠 How Celery is Used
-
-TaskFlow relies on Celery and Redis to handle time-heavy calculations asynchronously in the background so the user interface never lags.
-
-### 🕒 Scheduled Background Workflows
-The automation logic is managed through specific background task routines defined in `todos/tasks.py`:
-
-1. **`send_deadline_reminders` (Runs every 15 minutes):** Scans the active database to find tasks approaching their deadlines. It handles creating in-app alerts and processing reminder emails at exactly the **24-hour** and **1-hour** remaining milestones.
-2. **`generate_daily_overdue_digests` (Runs every morning):** Pools overdue items for each user, updates the global overdue notification log, and dispatches a comprehensive diagnostic summary email directly to the user.
-
-### ⚙️ Architecture Workflow
-```text
-[ Django Models ] ──> [ Celery Beat Clock ] ──> [ Redis Queue ] ──> [ Celery Worker ] ──> [ Live UI Notification ]
