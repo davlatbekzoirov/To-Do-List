@@ -296,6 +296,7 @@ async function ajaxToggle(taskId) {
 
         if (data.completed) {
             card.classList.add('completed');
+            titleEl?.classList.add('completed-text');
             btn.classList.add('done');
             icon.style.display = 'block';
             titleEl?.classList.add('completed-text');

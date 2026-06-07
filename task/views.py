@@ -132,14 +132,6 @@ def task_toggle(request, pk):
     if task.completed and task.recurrence:
         new_task = task.spawn_next_recurrence()
         if new_task:
-            msg = f"Recurring schedule spawned a new task instance: '{new_task.title}'"
-            Notification.objects.create(
-                user=request.user,
-                task=new_task,
-                notification_type='recurrence',
-                message=msg
-            )
-            
             spawned = {
                 'id': new_task.pk,
                 'title': new_task.title,

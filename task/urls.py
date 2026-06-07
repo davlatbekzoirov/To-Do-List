@@ -7,7 +7,8 @@ urlpatterns = [
     path('<int:pk>/edit/', views.task_edit, name='task_edit'),
     
     path('<int:pk>/toggle/', views.task_toggle, name='task_toggle'),
-    path('<int:pk>/delete/', views.task_delete, name='task_delete'),
+    path('task/<int:pk>/delete/', views.task_delete, name='task_delete'),
+    path('task/<int:pk>/toggle/', views.task_toggle, name='task_toggle'),
     path('subtask/<int:pk>/toggle/', views.subtask_toggle, name='subtask_toggle'),
     
     path('<int:pk>/record-focus/', views.record_focus_session, name='record_focus_session'),

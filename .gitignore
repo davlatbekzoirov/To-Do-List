@@ -44,7 +44,6 @@ venv.bak/
 
 # Media and uploads directory (if added later)
 media/
-/static/
 
 # ==========================================
 # Environment Variables & Secrets
