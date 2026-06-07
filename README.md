@@ -45,32 +45,6 @@ The automation logic is managed through specific background task routines define
 1. **`send_deadline_reminders` (Runs every 15 minutes):** Scans the active database to find tasks approaching their deadlines. It handles creating in-app alerts and processing reminder emails at exactly the **24-hour** and **1-hour** remaining milestones.
 2. **`generate_daily_overdue_digests` (Runs every morning):** Pools overdue items for each user, updates the global overdue notification log, and dispatches a comprehensive diagnostic summary email directly to the user.
 
-## 🚀 Quick Setup Guide
-
-Get your local instance of TaskFlow up and running smoothly by following these steps.
-
-### 1. Environment Setup
-Clone or download this repository, navigate to the project root directory, and initialize a Python virtual environment:
-
-```bash
-python3 -m venv venv
-# On macOS/Linux:
-source venv/bin/activate
-# On Windows (Command Prompt):
-venv\Scripts\activate
-
-pip install -r requirements.txt
-python manage.py makemigrations
-python manage.py migrate
-python manage.py runserver```
-
-### Open New terminal 
-```bash
-# Using WSL / Linux / macOS:
-sudo service redis-server start
-# Force execution through your environment directory
-venv/bin/celery -A todoproject worker --loglevel=info```
-
 ### ⚙️ Architecture Workflow
 ```text
 [ Django Models ] ──> [ Celery Beat Clock ] ──> [ Redis Queue ] ──> [ Celery Worker ] ──> [ Live UI Notification ]
